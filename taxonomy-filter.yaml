@@ -1,0 +1,4 @@
+enabled: true                # Disable or enable plugin. Default true;
+routes: [/]                  # array|string Array of routes or single route on which the plugin should be enabled
+taxonomies: [category, tag]  # Array of taxonomies to display in list
+isProduction: true           # Load minified css/js when true. Default true

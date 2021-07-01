@@ -1,0 +1,28 @@
+{% set taxlist = children_only is defined ? taxonomylist.getChildPagesTags() : taxonomylist.get() %}
+
+{% if taxlist %}
+
+	<form id="taxonomy-filter" method="POST">
+		{% for taxonomy in config.plugins['taxonomy-filter'].taxonomies %}
+			<h5 class="taxonomy-title">{{ taxonomy | capitalize }}</h5>
+			<div class="taxonomy-group">
+				{% for taxon, value in taxlist[taxonomy] %}
+					{% set selectedTaxList = uri.param(taxonomy) | split(',') %}
+					{% set active = (taxon in selectedTaxList) ? 'checked' : '' %}
+
+					<div class="form-group">
+						<input id="{{ taxonomy ~ ':' ~ taxon }}" 
+							name="{{ taxonomy ~ ':' ~ taxon }}" 
+							type="checkbox" {{ active }}>
+						<label for="{{ taxonomy ~ ':' ~ taxon }}">{{ taxon | capitalize }}</label>
+					</div>
+				{% endfor %}
+			</div>
+		{% endfor %}
+
+		<div class="button-group">
+			<a id="submit" href="" class="btn">Search</a>
+			<a id="reset" href="" class="btn">Reset</a>
+		</div>
+	</form>
+{% endif %}

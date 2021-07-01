@@ -1,0 +1,28 @@
+{
+  "name": "tonhaarmans/taxonomy-filter",
+  "type": "grav-plugin",
+  "description": "Grav plugin to filter blog items using multiple taxonomies",
+  "keywords": ["plugin"],
+  "homepage": "https://github.com/tonhaarmans/taxonomy-filter",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ton Haarmans",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=7.3.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Grav\\Plugin\\TaxonomyFilter\\": "classes/"
+    },
+    "classmap":  ["taxonomy-filter.php"]
+  },
+  "config": {
+    "platform": {
+      "php": "7.3.6"
+    }
+  }
+}
