@@ -22,7 +22,7 @@ class TaxonomyFilter {
         // 'Reset' button clears all checkboxes and navigates to url without Taxonumy filters
         resetBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            this.resetCheckboxes();
+            this.clearFields();
             const pathname = this.getCleanPathname();
             window.location.href = pathname;
         });
@@ -30,11 +30,14 @@ class TaxonomyFilter {
     /**
      * Reset all checkboxes
      */
-    resetCheckboxes() {
-        const checkboxes = document.querySelectorAll('#taxonomy-filter input');
+    clearFields() {
+        var _a, _b;
+        const checkboxes = document.querySelectorAll('#taxonomy-filter input[type="checkbox"]');
         for (const checkbox of checkboxes) {
             checkbox.checked = false;
         }
+        (_a = document.getElementById('starts-after')) === null || _a === void 0 ? void 0 : _a.setAttribute('value', '');
+        (_b = document.getElementById('starts-before')) === null || _b === void 0 ? void 0 : _b.setAttribute('value', '');
     }
     /**
      * Removes all Taxonomy filters (`/tag:photography`) and Pagination index (`/page:2`) from `document.location.pathname`.
@@ -44,14 +47,16 @@ class TaxonomyFilter {
     getCleanPathname() {
         let pathname = document.location.pathname;
         // For every input field, remove it from the filters in the Url
-        const checkboxes = document.querySelectorAll('#taxonomy-filter input');
+        const checkboxes = document.querySelectorAll('#taxonomy-filter input[type="checkbox"]');
         for (const checkbox of checkboxes) {
-            // The name of the checkbox is like 'tag:photography'
-            const [taxonomy] = checkbox.name.split(':');
+            // The name of the checkbox is like 'tag-photography'
+            const [taxonomy] = checkbox.name.split('-');
             // Remove category/tag from e.g. domain/blog/category:blog/tag:travel
             const regex = new RegExp(`\/${taxonomy}:[^\/]+`);
             pathname = pathname.replace(regex, '');
         }
+        // Remove date range
+        pathname = pathname.replace(/(starts-after|ends-before):[^\/]+/g, '');
         // Remove page:2 index
         pathname = pathname.replace(/\/page:\d+/, '');
         // Remove possible trailing slash
@@ -66,20 +71,31 @@ class TaxonomyFilter {
     addTaxonomyFiltersToPathname(pathname) {
         const form = document.getElementById('taxonomy-filter');
         const formFields = new FormData(form);
-        const taxonomies = {};
+        const fieldValues = {};
         for (const key of formFields.keys()) {
-            let taxonomy, taxon;
-            [taxonomy, taxon] = key.split(':');
-            if (!taxonomies[taxonomy]) {
-                taxonomies[taxonomy] = '';
+            if (key.match(/(starts-after|ends-before)/)) {
+                continue;
             }
-            taxonomies[taxonomy] += (taxonomies[taxonomy] ? `,${taxon}` : taxon);
+            // let taxonomy, taxon;
+            const [taxonomy, taxon] = key.split('-');
+            if (!fieldValues[taxonomy]) {
+                fieldValues[taxonomy] = '';
+            }
+            fieldValues[taxonomy] += (fieldValues[taxonomy] ? `,${taxon}` : taxon);
         }
-        let filters = '';
-        for (const entry of Object.entries(taxonomies)) {
-            filters += `/${entry[0]}:${entry[1]}`;
+        const startDate = formFields.get('starts-after');
+        const endDate = formFields.get('ends-before');
+        if (startDate) {
+            fieldValues['starts-after'] = startDate;
         }
-        return (pathname + filters).replace(/\/\//g, '/');
+        if (endDate) {
+            fieldValues['ends-before'] = endDate;
+        }
+        let params = '';
+        for (const entry of Object.entries(fieldValues)) {
+            params += `/${entry[0]}:${entry[1]}`;
+        }
+        return (pathname + params).replace(/\/\//g, '/');
     }
 }
 new TaxonomyFilter().initEventHandlers();

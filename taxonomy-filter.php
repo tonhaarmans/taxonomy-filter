@@ -3,8 +3,13 @@
 namespace Grav\Plugin;
 
 use Composer\Autoload\ClassLoader;
+use DateTime;
 use Grav\Common\Assets;
+use Grav\Common\Page\Collection;
+use Grav\Common\Page\Page;
 use Grav\Common\Plugin;
+use Grav\Common\Uri;
+use RocketTheme\Toolbox\Event\Event;
 
 /**
  * Class TaxonomyFilterPlugin
@@ -61,6 +66,7 @@ class TaxonomyFilterPlugin extends Plugin
                 // Put your main events here
                 'onTwigTemplatePaths' => ['onTwigTemplatePaths', 0],
                 'onAssetsInitialized' => ['onAssetsInitialized', 0],
+                'onCollectionProcessed' => ['onCollectionProcessed', 0],
             ]);
         }
     }
@@ -72,7 +78,7 @@ class TaxonomyFilterPlugin extends Plugin
      */
     public function isOnRoute(): bool
     {
-       $path = $this->grav['uri']->path();
+        $path = $this->grav['uri']->path();
         $routes = $this->config->get('plugins.' . $this->name . '.routes');
 
         $enable = $routes && (
@@ -110,5 +116,51 @@ class TaxonomyFilterPlugin extends Plugin
             "plugin://{$this->name}/js/taxonomy-filter$minified.js",
             ['group' => 'head', 'position' => 'after', 'loading' => 'defer']
         );
+    }
+
+    /**
+     * Remove items from collection when selected dates do not fall between dates of seminar (if set in page header).
+     * 
+     * @param Event $event Contains 'collection' and 'context'
+     */
+    public function onCollectionProcessed(Event $event)
+    {
+        /** @var Collection */
+        $collection = $event['collection'];
+
+        /** @var Uri */
+        $uri = $this->grav['uri'];
+
+        $paramStart = $uri->param('starts-after');
+        $paramEnd = $uri->param('ends-before');
+
+        if ($paramStart !== false || $paramEnd !== false) {
+            /** @var Page */
+            foreach ($collection as $page) {
+                $header = $page->header();
+
+                if ($paramStart && isset($header->daterange['start'])) {
+                    $headerStart = $header->daterange['start'];
+
+                    // Remove item when selected start date is after start date seminar
+                    $startDate = (new DateTime($paramStart))->getTimestamp();
+
+                    if ($startDate > $headerStart) {
+                        $collection->remove($page->path());
+                    }
+                }
+
+                if ($paramEnd && isset($header->daterange['end'])) {
+                    $headerEnd = $header->daterange['end'];
+
+                    $endDate = (new DateTime($paramEnd))->getTimestamp();
+
+                    // Remove item when selected end date is before end date seminar
+                    if ($endDate < $headerEnd) {
+                        $collection->remove($page->path());
+                    }
+                }
+            }
+        }
     }
 }
